@@ -240,7 +240,7 @@ export function ScheduleEditor() {
   );
 }
 
-async function fullscreen(on: boolean) {
+export async function fullscreen(on: boolean) {
   try {
     if (isTauri) {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
@@ -253,7 +253,7 @@ async function fullscreen(on: boolean) {
 }
 
 /** Exit needs a 1.5 s press so a child does not leave by accident. */
-function HoldToExit({ onExit }: { onExit: () => void }) {
+export function HoldToExit({ onExit }: { onExit: () => void }) {
   const { t } = useI18n();
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [holding, setHolding] = useState(false);

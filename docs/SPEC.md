@@ -50,13 +50,13 @@ Roles: **parent**, **teacher**, **specialist** (therapist, aide). The child uses
 | 7 | Encrypted backup/restore; encrypted share file to exchange one child's data between home and school | v1 ✅ |
 | 8 | Password + recovery key, auto-lock, themes (light/dark/high contrast), readable font, text size | v1 ✅ |
 | 9 | "Support this project" PayPal button (hidden until the link is set in `src/lib/app.ts`) | v1 ✅ |
-| 10 | Social stories builder, simple talking board (AAC-lite) | v1.2 |
-| 11 | Locked child mode (calm-down corner, feelings check-in, simple learning games) | v1.2 |
-| 12 | Health logs (medicine, seizures, sleep), appointments & reminders, document vault | v1.3 |
-| 13 | Teacher tools: caseload dashboard, group data sessions, substitute sheet | v1.3 |
+| 10 | Social stories builder (with reader), talking board with sentence strip | v0.2 ✅ |
+| 11 | Calm corner (breathing, feelings check-in, calm sounds, counting), reward charts, hold-to-exit full-screen modes | v0.2 ✅ |
+| 12 | Health log (medicine, seizures, sleep, illness) and appointments · document vault later | v0.2 ✅ |
+| 13 | Caseload overview, quick search (Ctrl+K), Apple-style design · group data sessions later | v0.2 ✅ |
 | 14 | Transition-to-adulthood life skills | later |
 
-### 2.2 Community hub (free, online)
+### 2.2 Community hub (free, online) — built in v0.2 (database in `supabase/migrations/001_community.sql`, setup in `docs/COMMUNITY_SETUP.md`)
 
 - **Groups and forums** by language, region, age and need (not by label only).
 - **Ask a Specialist**: public, anonymous Q&A answered by **verified volunteer specialists** (SLPs / speech therapists, OTs, BCBAs, psychologists, special-ed teachers, paediatricians). Later: free live "office hours" and group webinars.

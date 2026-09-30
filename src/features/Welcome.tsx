@@ -6,7 +6,7 @@ import { useI18n } from "../lib/i18n";
 import { emptyVault, type Country, type Role, type VaultData } from "../lib/schema";
 import { markDirty, openStore } from "../lib/store";
 import { storage } from "../lib/storage";
-import { Chips, Field } from "../components/ui";
+import { Field, Segmented } from "../components/ui";
 
 const COUNTRIES: { value: Country; label: string }[] = [
   { value: "US", label: "United States" },
@@ -50,7 +50,7 @@ export function Setup(props: { country: Country; onCountry: (c: Country) => void
     return (
       <div className="center-screen">
         <div className="card center-card stack">
-          <ShieldCheck size={40} color="var(--primary)" />
+          <ShieldCheck size={44} color="var(--green)" style={{ alignSelf: "center" }} />
           <h1>{t("Your recovery key")}</h1>
           <p>
             {t(
@@ -81,8 +81,8 @@ export function Setup(props: { country: Country; onCountry: (c: Country) => void
   return (
     <div className="center-screen">
       <form className="card center-card stack" onSubmit={submit}>
-        <div className="row">
-          <img src="/icon.svg" alt="" width={48} height={48} />
+        <div className="stack-sm" style={{ alignItems: "center", textAlign: "center" }}>
+          <img className="app-icon" src="/icon.svg" alt="" />
           <h1>
             {t("Welcome to")} {APP_NAME}
           </h1>
@@ -94,7 +94,7 @@ export function Setup(props: { country: Country; onCountry: (c: Country) => void
           <input value={name} onChange={(e) => setName(e.target.value)} required autoFocus />
         </Field>
         <Field label={t("I am a")}>
-          <Chips options={ROLES.map((r) => ({ ...r, label: t(r.label) }))} value={role} onChange={setRole} />
+          <Segmented full options={ROLES.map((r) => ({ ...r, label: t(r.label) }))} value={role} onChange={setRole} />
         </Field>
         <Field label={t("Country")} hint={t("sets spelling, dates and plan types")}>
           <select value={props.country} onChange={(e) => props.onCountry(e.target.value as Country)}>
@@ -158,9 +158,10 @@ export function Unlock(props: { file: VaultFile; onDone: () => void }) {
   return (
     <div className="center-screen">
       <form className="card center-card stack" onSubmit={submit}>
-        <div className="row">
-          <img src="/icon.svg" alt="" width={48} height={48} />
+        <div className="stack-sm" style={{ alignItems: "center", textAlign: "center" }}>
+          <img className="app-icon" src="/icon.svg" alt="" />
           <h1>{APP_NAME}</h1>
+          <p className="muted">{t("Enter your password to unlock")}</p>
         </div>
         {mode === "password" && (
           <Field label={t("Password")}>

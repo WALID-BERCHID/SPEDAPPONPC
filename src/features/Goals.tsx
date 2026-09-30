@@ -342,10 +342,10 @@ function DataEntry({ goal }: { goal: Goal }) {
       {goal.measure === "percent" && (
         <>
           <div className="trial-btns">
-            <button className="btn" style={{ borderColor: "var(--ok)", color: "var(--ok)" }} onClick={() => setCorrect((c) => c + 1)}>
+            <button className="btn" style={{ background: "var(--green-soft)", color: "var(--ok)" }} onClick={() => setCorrect((c) => c + 1)}>
               <Check size={28} /> {t("Correct")} ({correct})
             </button>
-            <button className="btn" style={{ borderColor: "var(--danger)", color: "var(--danger)" }} onClick={() => setWrong((c) => c + 1)}>
+            <button className="btn" style={{ background: "var(--danger-soft)", color: "var(--danger)" }} onClick={() => setWrong((c) => c + 1)}>
               <X size={28} /> {t("Not yet")} ({wrong})
             </button>
           </div>

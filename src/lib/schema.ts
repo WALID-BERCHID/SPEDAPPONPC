@@ -136,6 +136,61 @@ export interface Checklist extends Base {
   items: ChecklistItem[];
 }
 
+export interface StoryPage {
+  id: string;
+  text: string;
+  emoji: string;
+  imageId?: string;
+}
+
+export interface Story extends Base {
+  childId: string;
+  title: string;
+  pages: StoryPage[];
+}
+
+export interface BoardButton {
+  id: string;
+  label: string;
+  emoji: string;
+  imageId?: string;
+  color: string;
+}
+
+export interface TalkBoard extends Base {
+  childId: string;
+  title: string;
+  buttons: BoardButton[];
+}
+
+export interface RewardChart extends Base {
+  childId: string;
+  title: string;
+  goal: number;
+  earned: number;
+  token: string;
+  reward: string;
+  rewardEmoji: string;
+  completedCount: number;
+}
+
+export type HealthType = "medication" | "seizure" | "sleep" | "illness" | "appointment" | "other";
+
+export interface HealthEvent extends Base {
+  childId: string;
+  type: HealthType;
+  at: string;
+  title: string;
+  details: string;
+  minutes: number | null;
+}
+
+export interface Feeling extends Base {
+  childId: string;
+  at: string;
+  feeling: string;
+}
+
 export interface Settings {
   country: Country;
   theme: Theme;
@@ -161,11 +216,17 @@ export interface VaultData {
   dailyLogs: DailyLog[];
   schedules: VisualSchedule[];
   checklists: Checklist[];
+  stories: Story[];
+  boards: TalkBoard[];
+  rewardCharts: RewardChart[];
+  health: HealthEvent[];
+  feelings: Feeling[];
   /** Resized photos as data URLs, keyed by id. */
   images: Record<string, string>;
 }
 
-export type Collection = "children" | "goals" | "dataPoints" | "behaviors" | "dailyLogs" | "schedules" | "checklists";
+export const COLLECTIONS = ["children", "goals", "dataPoints", "behaviors", "dailyLogs", "schedules", "checklists", "stories", "boards", "rewardCharts", "health", "feelings"] as const;
+export type Collection = (typeof COLLECTIONS)[number];
 
 export type RecordOf<K extends Collection> = VaultData[K][number];
 
@@ -190,6 +251,11 @@ export function emptyVault(profile: Profile, country: Country): VaultData {
     dailyLogs: [],
     schedules: [],
     checklists: [],
+    stories: [],
+    boards: [],
+    rewardCharts: [],
+    health: [],
+    feelings: [],
     images: {},
   };
 }

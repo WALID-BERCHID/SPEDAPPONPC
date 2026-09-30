@@ -2,16 +2,17 @@
 
 A **free**, **offline** and **private** Windows app for parents, teachers and specialists supporting children with special needs.
 
-- Child profiles and a printable "All About Me" page
-- IEP / 504 / EHCP / NDIS goals with quick data collection and progress charts
-- Behavior log (before → behavior → after) with a pattern finder
-- Daily home–school notebook
-- Visual schedules, routines, first–then boards, full-screen show mode, visual timer
-- Checklists for meetings, visits and transitions
-- Printable progress reports for meetings
-- Password encryption (AES-256), recovery key, auto-lock, daily automatic backups, encrypted share files for home ↔ school
+**Track:** child profiles and "All About Me" page · IEP / 504 / EHCP / NDIS goals with data collection and charts · behavior log with pattern finder · daily home–school notebook · health log and appointments
 
-📖 **[How to use it (with screenshots)](docs/USER_GUIDE.md)** · 🧭 **[Product spec and roadmap](docs/SPEC.md)**
+**Support:** visual schedules with full-screen mode · social stories · talking board · reward charts · visual timer · calm corner
+
+**Plan:** checklists · printable progress reports
+
+**Together:** free community with groups, Ask-a-Specialist, template library, live sessions, points, levels, badges and verifiable certificates
+
+**Private by design:** AES-256 encryption, recovery key, auto-lock, daily backups, encrypted home ↔ school share files
+
+📖 **[How to use it (with screenshots)](docs/USER_GUIDE.md)** · 🌐 **[Switch on the community](docs/COMMUNITY_SETUP.md)** · 🧭 **[Product spec](docs/SPEC.md)**
 
 ![Today screen](docs/screenshots/03-today.png)
 
@@ -43,6 +44,9 @@ src/lib/store.ts      in-memory data, autosave, share-file merge
 src/lib/schema.ts     data model, plan types per country
 src/lib/i18n.tsx      US vs Commonwealth spelling, date formats
 src/features/*        one file per screen
+src/community/*       community client (live Supabase + preview), levels, privacy check
+supabase/migrations/  community database with security rules
+web/verify.html       public certificate check page (GitHub Pages)
 src-tauri/            desktop wrapper (Tauri 2)
 ```
 

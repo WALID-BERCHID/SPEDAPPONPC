@@ -1,6 +1,6 @@
 [package]
 name = "hand-in-hand"
-version = "0.1.0"
+version = "0.2.0"
 description = "Free, private organiser for families and teachers of children with special needs"
 edition = "2021"
 

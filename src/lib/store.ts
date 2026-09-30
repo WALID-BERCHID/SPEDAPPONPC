@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { sealVault, type Session } from "./crypto";
 import { storage } from "./storage";
-import type { Collection, RecordOf, VaultData } from "./schema";
+import { COLLECTIONS, type Collection, type RecordOf, type VaultData } from "./schema";
 
 // All data lives in memory while the vault is unlocked and is saved (encrypted)
 // shortly after every change.
@@ -33,7 +33,9 @@ export function openStore(s: Session, d: VaultData) {
 
 /** Fills in collections added after a vault was created. */
 function migrate(d: VaultData): VaultData {
-  return { ...d, checklists: d.checklists ?? [] };
+  const out = { ...d };
+  for (const key of COLLECTIONS) if (!Array.isArray(out[key])) (out as Record<string, unknown>)[key] = [];
+  return out;
 }
 
 /** Saves and forgets everything. The caller unmounts the screens that read the data. */
@@ -114,15 +116,13 @@ export function remove(key: Collection, id: string) {
 }
 
 export function removeChild(id: string) {
-  update((d) => ({
-    children: d.children.filter((c) => c.id !== id),
-    goals: d.goals.filter((g) => g.childId !== id),
-    dataPoints: d.dataPoints.filter((p) => p.childId !== id),
-    behaviors: d.behaviors.filter((b) => b.childId !== id),
-    dailyLogs: d.dailyLogs.filter((l) => l.childId !== id),
-    schedules: d.schedules.filter((s) => s.childId !== id),
-    checklists: d.checklists.filter((c) => c.childId !== id),
-  }));
+  update((d) => {
+    const next: Partial<VaultData> = { children: d.children.filter((c) => c.id !== id) };
+    for (const key of COLLECTIONS) {
+      if (key !== "children") (next as Record<string, unknown>)[key] = (d[key] as { childId: string }[]).filter((r) => r.childId !== id);
+    }
+    return next;
+  });
 }
 
 export function addImage(dataUrl: string): string {
@@ -131,7 +131,6 @@ export function addImage(dataUrl: string): string {
   return id;
 }
 
-const COLLECTIONS: Collection[] = ["children", "goals", "dataPoints", "behaviors", "dailyLogs", "schedules", "checklists"];
 
 export interface SharePack {
   kind: "child";
@@ -143,25 +142,13 @@ export interface SharePack {
 /** Everything about one child, for a share file. */
 export function packChild(childId: string): SharePack {
   const d = getData();
-  const own = <T extends { childId: string }>(list: T[]) => list.filter((r) => r.childId === childId);
-  const children = d.children.filter((c) => c.id === childId);
-  const schedules = own(d.schedules);
-  const imageIds = new Set([...children.map((c) => c.photoId), ...schedules.flatMap((s) => s.steps.map((st) => st.imageId))]);
-  return {
-    kind: "child",
-    exportedAt: now(),
-    from: d.profile.name,
-    data: {
-      children,
-      goals: own(d.goals),
-      dataPoints: own(d.dataPoints),
-      behaviors: own(d.behaviors),
-      dailyLogs: own(d.dailyLogs),
-      schedules,
-      checklists: own(d.checklists),
-      images: Object.fromEntries(Object.entries(d.images).filter(([id]) => imageIds.has(id))),
-    },
-  };
+  const data = {} as SharePack["data"];
+  for (const key of COLLECTIONS) {
+    (data as Record<string, unknown>)[key] = (d[key] as { id: string; childId?: string }[]).filter((r) => (key === "children" ? r.id : r.childId) === childId);
+  }
+  const used = JSON.stringify(data);
+  data.images = Object.fromEntries(Object.entries(d.images).filter(([id]) => used.includes(id)));
+  return { kind: "child", exportedAt: now(), from: d.profile.name, data };
 }
 
 /** Merges a share pack. A record replaces ours only if it was changed more recently. */

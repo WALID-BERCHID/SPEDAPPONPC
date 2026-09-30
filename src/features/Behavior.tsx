@@ -6,7 +6,7 @@ import { sleepLink, summarize } from "../lib/insights";
 import type { BehaviorFunction, Setting } from "../lib/schema";
 import { remove, upsert, useData } from "../lib/store";
 import { countBy, daysAgo, localDateTime } from "../lib/util";
-import { Chips, Field, Page, Suggest } from "../components/ui";
+import { Chips, Field, Page, Segmented, Suggest } from "../components/ui";
 import { Bars } from "../components/charts";
 
 const PRESET_BEHAVIORS = ["Meltdown", "Hitting", "Throwing things", "Running away", "Screaming", "Refusing", "Self-injury", "Crying"];
@@ -38,13 +38,15 @@ export function BehaviorPage() {
 
   return (
     <Page title={t("Behavior")} subtitle={`${child!.firstName} · ${t("what happened before, the behavior, and what happened after")}`}>
-      <div className="tabs" role="tablist">
-        <button role="tab" aria-selected={tab === "log"} onClick={() => setTab("log")}>
-          {t("Log")}
-        </button>
-        <button role="tab" aria-selected={tab === "patterns"} onClick={() => setTab("patterns")}>
-          {t("Patterns (last 30 days)")}
-        </button>
+      <div className="tabs">
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "log" as const, label: t("Log") },
+            { value: "patterns" as const, label: t("Patterns (last 30 days)") },
+          ]}
+        />
       </div>
       {tab === "log" ? <LogTab key={child!.id} events={events} /> : <Patterns events={events} />}
     </Page>

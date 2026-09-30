@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { HashRouter, NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { BarChart3, BookOpen, Heart, Home as HomeIcon, Lock, Settings as SettingsIcon, Target, Timer, Users, Activity, LayoutGrid, Globe, ListChecks } from "lucide-react";
+import { Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react";
+import { HashRouter, NavLink, Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Heart, Lock, Search, Settings as SettingsIcon } from "lucide-react";
+import { NAV } from "./lib/nav";
 import { APP_NAME, DONATE_URL } from "./lib/app";
 import { I18nContext, makeI18n, rememberCountry, savedCountry, useI18n } from "./lib/i18n";
 import { closeStore, flush, useData, useSaveState } from "./lib/store";
@@ -8,6 +9,8 @@ import { isTauri, storage } from "./lib/storage";
 import { parseFile, type VaultFile } from "./lib/crypto";
 import type { Settings as SettingsT } from "./lib/schema";
 import { ChildContext, useChild } from "./lib/childContext";
+import { fullName } from "./lib/util";
+import { Avatar, Tile } from "./components/ui";
 import { Setup, Unlock } from "./features/Welcome";
 import { Home } from "./features/Home";
 import { ChildrenPage, ChildEditor, AllAboutMe } from "./features/Children";
@@ -16,10 +19,19 @@ import { BehaviorPage } from "./features/Behavior";
 import { NotebookPage } from "./features/Notebook";
 import { VisualPage, ScheduleEditor, ShowSchedule, VisualTimer } from "./features/Visual";
 import { ReportPage } from "./features/Reports";
-import { CommunityPage } from "./features/Community";
 import { ChecklistsPage } from "./features/Checklists";
+import { StoriesPage, StoryEditor, StoryReader } from "./features/Stories";
+import { TalkPage } from "./features/Talk";
+import { CalmCorner } from "./features/Calm";
+import { RewardChartsPage, ShowRewardChart } from "./features/RewardCharts";
+import { HealthPage } from "./features/Health";
 import { SettingsPage, openLink } from "./features/Settings";
-import { fullName } from "./lib/util";
+import { QuickSearch } from "./features/QuickSearch";
+
+// The community (and its server library) loads only when opened.
+const CommunityHub = lazy(() => import("./features/community/Hub").then((m) => ({ default: m.CommunityHub })));
+const PostView = lazy(() => import("./features/community/PostView").then((m) => ({ default: m.PostView })));
+const CertificateView = lazy(() => import("./features/community/CertificateView").then((m) => ({ default: m.CertificateView })));
 
 type Phase = { name: "loading" } | { name: "setup" } | { name: "locked"; file: VaultFile } | { name: "open" };
 
@@ -51,7 +63,7 @@ export default function App() {
 
   return (
     <I18nContext.Provider value={i18n}>
-      {phase.name === "loading" && <div className="center-screen muted">…</div>}
+      {phase.name === "loading" && <div className="center-screen" />}
       {phase.name === "setup" && <Setup country={country} onCountry={changeCountry} onDone={() => setPhase({ name: "open" })} />}
       {phase.name === "locked" && <Unlock file={phase.file} onDone={() => setPhase({ name: "open" })} />}
       {phase.name === "open" && <Unlocked onLock={lock} onCountry={changeCountry} />}
@@ -90,6 +102,7 @@ function useAutoLock(minutes: number, onLock: () => void) {
 function Unlocked({ onLock, onCountry }: { onLock: () => void; onCountry: (c: SettingsT["country"]) => void }) {
   const data = useData();
   const [childId, setChildIdState] = useState(() => localStorage.getItem("hih.child") ?? "");
+  const [searching, setSearching] = useState(false);
   useAppearance(data.settings);
   useAutoLock(data.settings.autoLockMinutes, onLock);
 
@@ -104,8 +117,16 @@ function Unlocked({ onLock, onCountry }: { onLock: () => void; onCountry: (c: Se
         unlisten = await getCurrentWindow().onCloseRequested(() => flush());
       });
     }
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearching(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("beforeunload", save);
+      window.removeEventListener("keydown", onKey);
       unlisten?.();
     };
   }, []);
@@ -120,32 +141,56 @@ function Unlocked({ onLock, onCountry }: { onLock: () => void; onCountry: (c: Se
     <ChildContext.Provider value={{ child, setChildId }}>
       <HashRouter>
         <div className="shell">
-          <Sidebar onLock={onLock} />
-          <main className="main">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/children" element={<ChildrenPage />} />
-              <Route path="/children/new" element={<ChildEditor />} />
-              <Route path="/children/:id" element={<ChildEditor />} />
-              <Route path="/children/:id/about" element={<AllAboutMe />} />
-              <Route path="/goals" element={<NeedsChild><GoalsPage /></NeedsChild>} />
-              <Route path="/goals/:id" element={<GoalDetail />} />
-              <Route path="/behavior" element={<NeedsChild><BehaviorPage /></NeedsChild>} />
-              <Route path="/notebook" element={<NeedsChild><NotebookPage /></NeedsChild>} />
-              <Route path="/visual" element={<NeedsChild><VisualPage /></NeedsChild>} />
-              <Route path="/visual/timer" element={<VisualTimer />} />
-              <Route path="/visual/:id" element={<ScheduleEditor />} />
-              <Route path="/visual/:id/show" element={<ShowSchedule />} />
-              <Route path="/checklists" element={<NeedsChild><ChecklistsPage /></NeedsChild>} />
-              <Route path="/reports" element={<NeedsChild><ReportPage /></NeedsChild>} />
-              <Route path="/community" element={<CommunityPage />} />
-              <Route path="/settings" element={<SettingsPage onLock={onLock} />} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
+          <Sidebar onLock={onLock} onSearch={() => setSearching(true)} />
+          <Main>
+            <Suspense fallback={null}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/children" element={<ChildrenPage />} />
+                <Route path="/children/new" element={<ChildEditor />} />
+                <Route path="/children/:id" element={<ChildEditor />} />
+                <Route path="/children/:id/about" element={<AllAboutMe />} />
+                <Route path="/goals" element={<NeedsChild><GoalsPage /></NeedsChild>} />
+                <Route path="/goals/:id" element={<GoalDetail />} />
+                <Route path="/behavior" element={<NeedsChild><BehaviorPage /></NeedsChild>} />
+                <Route path="/notebook" element={<NeedsChild><NotebookPage /></NeedsChild>} />
+                <Route path="/health" element={<NeedsChild><HealthPage /></NeedsChild>} />
+                <Route path="/visual" element={<NeedsChild><VisualPage /></NeedsChild>} />
+                <Route path="/visual/timer" element={<VisualTimer />} />
+                <Route path="/visual/:id" element={<ScheduleEditor />} />
+                <Route path="/visual/:id/show" element={<ShowSchedule />} />
+                <Route path="/stories" element={<NeedsChild><StoriesPage /></NeedsChild>} />
+                <Route path="/stories/:id" element={<StoryEditor />} />
+                <Route path="/stories/:id/read" element={<StoryReader />} />
+                <Route path="/talk" element={<NeedsChild><TalkPage /></NeedsChild>} />
+                <Route path="/rewards" element={<NeedsChild><RewardChartsPage /></NeedsChild>} />
+                <Route path="/rewards/:id" element={<ShowRewardChart />} />
+                <Route path="/calm" element={<CalmCorner />} />
+                <Route path="/checklists" element={<NeedsChild><ChecklistsPage /></NeedsChild>} />
+                <Route path="/reports" element={<NeedsChild><ReportPage /></NeedsChild>} />
+                <Route path="/community" element={<CommunityHub />} />
+                <Route path="/community/post/:id" element={<PostView />} />
+                <Route path="/community/certificate/:id" element={<CertificateView />} />
+                <Route path="/settings" element={<SettingsPage onLock={onLock} />} />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </Suspense>
+          </Main>
         </div>
+        {searching && <QuickSearch onClose={() => setSearching(false)} />}
       </HashRouter>
     </ChildContext.Provider>
+  );
+}
+
+/** Scrolls to the top and replays the page animation on every navigation. */
+function Main({ children }: { children: ReactNode }) {
+  const { pathname } = useLocation();
+  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  return (
+    <main className="main" key={pathname}>
+      {children}
+    </main>
   );
 }
 
@@ -154,34 +199,22 @@ function NeedsChild({ children }: { children: ReactNode }) {
   return child ? <>{children}</> : <Navigate to="/children/new" />;
 }
 
-function Sidebar({ onLock }: { onLock: () => void }) {
+function Sidebar({ onLock, onSearch }: { onLock: () => void; onSearch: () => void }) {
   const { t } = useI18n();
   const data = useData();
   const saveState = useSaveState();
   const { child, setChildId } = useChild();
-  const links: [string, string, ReactNode][] = [
-    ["/", "Today", <HomeIcon size={20} />],
-    ["/children", "Children", <Users size={20} />],
-    ["/goals", "Goals & progress", <Target size={20} />],
-    ["/behavior", "Behavior", <Activity size={20} />],
-    ["/notebook", "Daily notebook", <BookOpen size={20} />],
-    ["/visual", "Visual supports", <LayoutGrid size={20} />],
-    ["/visual/timer", "Visual timer", <Timer size={20} />],
-    ["/checklists", "Checklists", <ListChecks size={20} />],
-    ["/reports", "Reports", <BarChart3 size={20} />],
-    ["/community", "Community", <Globe size={20} />],
-    ["/settings", "Settings", <SettingsIcon size={20} />],
-  ];
+  const nav = useNavigate();
   return (
     <aside className="sidebar no-print">
       <div className="brand">
         <img src="/icon.svg" alt="" />
         {APP_NAME}
       </div>
-      {data.children.length > 0 && (
-        <label className="field">
-          <span className="small muted">{t("Working with")}</span>
-          <select value={child?.id ?? ""} onChange={(e) => setChildId(e.target.value)}>
+      {child && (
+        <label className="child-switch" title={t("Working with")}>
+          <Avatar child={child} size="sm" />
+          <select value={child.id} onChange={(e) => setChildId(e.target.value)} aria-label={t("Working with")}>
             {data.children.map((c) => (
               <option key={c.id} value={c.id}>
                 {fullName(c)}
@@ -190,25 +223,41 @@ function Sidebar({ onLock }: { onLock: () => void }) {
           </select>
         </label>
       )}
+      <button className="btn ghost" style={{ justifyContent: "flex-start", color: "var(--muted)", fontWeight: 500, background: "var(--fill)" }} onClick={onSearch}>
+        <Search size={15} /> <span className="grow" style={{ textAlign: "start" }}>{t("Search")}</span> <kbd>Ctrl K</kbd>
+      </button>
       <nav className="nav" aria-label="Main">
-        {links.map(([to, label, icon]) => (
-          <NavLink key={to} to={to} end>
-            {icon}
-            {t(label)}
-          </NavLink>
+        {NAV.map((section) => (
+          <div key={section.title} className="nav">
+            {section.title && <div className="nav-title">{t(section.title)}</div>}
+            {section.links.map(([to, label, color, icon]) => (
+              <NavLink key={to} to={to} end={to === "/" || to === "/visual"}>
+                <Tile color={color}>{icon}</Tile>
+                {t(label)}
+              </NavLink>
+            ))}
+          </div>
         ))}
       </nav>
       <div className="sidebar-foot">
+        <div className="nav">
+          <NavLink to="/settings">
+            <Tile color="#8e8e93">
+              <SettingsIcon size={15} />
+            </Tile>
+            {t("Settings")}
+          </NavLink>
+        </div>
         {DONATE_URL && (
-          <button className="btn" onClick={() => openLink(DONATE_URL)}>
-            <Heart size={18} color="var(--accent)" /> {t("Support this project")}
+          <button className="btn tinted" onClick={() => openLink(DONATE_URL)}>
+            <Heart size={16} color="var(--pink)" /> {t("Support this project")}
           </button>
         )}
         <button className="btn" onClick={onLock}>
-          <Lock size={18} /> {t("Lock")}
+          <Lock size={15} /> {t("Lock")}
         </button>
-        <span className="small muted" role="status" style={{ textAlign: "center" }}>
-          {saveState === "saving" ? t("Saving…") : saveState === "error" ? t("Could not save!") : t("All changes saved")}
+        <span className={"save-state " + saveState} role="status" onClick={() => nav("/settings")}>
+          {saveState === "saving" ? t("Saving…") : saveState === "error" ? t("Could not save!") : t("Saved and encrypted")}
         </span>
       </div>
     </aside>

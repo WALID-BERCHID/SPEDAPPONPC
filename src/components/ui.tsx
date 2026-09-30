@@ -1,5 +1,5 @@
 import { useEffect, useId, type ReactNode } from "react";
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { isTauri } from "../lib/storage";
 import type { Child } from "../lib/schema";
 import { useData } from "../lib/store";
@@ -31,7 +31,7 @@ export function Field(props: { label: string; hint?: string; children: ReactNode
   );
 }
 
-export function Modal(props: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode }) {
+export function Modal(props: { title: string; onClose: () => void; children: ReactNode; footer?: ReactNode; wide?: boolean }) {
   const id = useId();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
@@ -40,11 +40,11 @@ export function Modal(props: { title: string; onClose: () => void; children: Rea
   }, [props.onClose]);
   return (
     <div className="backdrop" onMouseDown={(e) => e.target === e.currentTarget && props.onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={id}>
+      <div className={"modal" + (props.wide ? " wide" : "")} role="dialog" aria-modal="true" aria-labelledby={id}>
         <header>
           <h2 id={id}>{props.title}</h2>
           <button className="btn ghost icon" onClick={props.onClose} aria-label="Close">
-            <X size={20} />
+            <X size={18} />
           </button>
         </header>
         <div className="body">{props.children}</div>
@@ -102,7 +102,7 @@ export function Suggest(props: { value: string; onChange: (v: string) => void; s
   );
 }
 
-export function Avatar({ child, size }: { child: Child; size?: "lg" }) {
+export function Avatar({ child, size }: { child: Child; size?: "sm" | "lg" }) {
   const { images } = useData();
   const cls = "avatar" + (size ? " " + size : "");
   const photo = child.photoId && images[child.photoId];
@@ -129,4 +129,99 @@ export async function tell(message: string) {
   } else {
     window.alert(message);
   }
+}
+
+export function Switch(props: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return <button type="button" role="switch" className="switch" aria-checked={props.checked} aria-label={props.label} onClick={() => props.onChange(!props.checked)} />;
+}
+
+export function Segmented<T extends string | number>(props: { options: { value: T; label: ReactNode }[]; value: T; onChange: (v: T) => void; full?: boolean; label?: string }) {
+  return (
+    <div className={"segmented" + (props.full ? " full" : "")} role="group" aria-label={props.label}>
+      {props.options.map((o) => (
+        <button type="button" key={String(o.value)} aria-pressed={props.value === o.value} onClick={() => props.onChange(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Colored rounded-square icon, like iOS Settings. */
+export function Tile(props: { color: string; children: ReactNode; size?: "lg" | "xl" }) {
+  return (
+    <span className={"tile" + (props.size ? " " + props.size : "")} style={{ background: props.color }} aria-hidden>
+      {props.children}
+    </span>
+  );
+}
+
+/** iOS-style grouped list. */
+export function Group(props: { title?: string; footer?: string; children: ReactNode }) {
+  return (
+    <div className="stack-sm" style={{ gap: 6 }}>
+      {props.title && <div className="section-title" style={{ marginBottom: 2 }}>{props.title}</div>}
+      <div className="group">{props.children}</div>
+      {props.footer && <p className="tiny muted" style={{ padding: "0 16px" }}>{props.footer}</p>}
+    </div>
+  );
+}
+
+export function Cell(props: { icon?: ReactNode; label: ReactNode; detail?: ReactNode; children?: ReactNode; onClick?: () => void }) {
+  const inner = (
+    <>
+      {props.icon}
+      <span className="label">
+        {props.label}
+        {props.detail && <span className="tiny muted" style={{ display: "block" }}>{props.detail}</span>}
+      </span>
+      {props.children}
+    </>
+  );
+  return props.onClick ? (
+    <button type="button" className={"cell" + (props.icon ? " indent" : "")} onClick={props.onClick}>
+      {inner}
+    </button>
+  ) : (
+    <div className={"cell" + (props.icon ? " indent" : "")}>{inner}</div>
+  );
+}
+
+/** Circular progress ring (0–1). */
+export function Ring(props: { value: number; size?: number; label?: ReactNode; color?: string; track?: string }) {
+  const size = props.size ?? 72;
+  const r = size / 2 - 6;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} className="ring" role="img" aria-label={`${Math.round(props.value * 100)}%`}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={props.track ?? "var(--fill)"} strokeWidth={7} />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke={props.color ?? "var(--green)"}
+        strokeWidth={7}
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={c * (1 - Math.max(0, Math.min(1, props.value)))}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{ transition: "stroke-dashoffset 0.6s cubic-bezier(0.2,0.8,0.2,1)" }}
+      />
+      {props.label != null && (
+        <text x="50%" y="50%" dominantBaseline="central" textAnchor="middle" fontSize={size / 4.2} style={{ fill: "currentColor" }}>
+          {props.label}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+export function SearchBox(props: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <label className="search" style={{ display: "block" }}>
+      <Search size={16} />
+      <input type="search" value={props.value} placeholder={props.placeholder} onChange={(e) => props.onChange(e.target.value)} />
+    </label>
+  );
 }

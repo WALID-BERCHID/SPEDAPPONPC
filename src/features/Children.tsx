@@ -7,7 +7,7 @@ import { useI18n } from "../lib/i18n";
 import { EMERGENCY, type Child, type Contact } from "../lib/schema";
 import { addImage, packChild, removeChild, upsert, useData } from "../lib/store";
 import { storage } from "../lib/storage";
-import { age, fullName, resizeImage } from "../lib/util";
+import { age, daysAgo, fullName, resizeImage } from "../lib/util";
 import { APP_NAME } from "../lib/app";
 import { Avatar, Empty, Field, Modal, Page, ask, tell } from "../components/ui";
 
@@ -15,8 +15,10 @@ const COLORS = ["#2f6f5e", "#3b6ea8", "#8a4fb5", "#c0567a", "#c46a1d", "#5b7d1f"
 
 export function ChildrenPage() {
   const { t } = useI18n();
-  const { children } = useData();
+  const data = useData();
+  const { children } = data;
   const nav = useNavigate();
+  const weekAgo = daysAgo(7);
   const add = (
     <button className="btn primary" onClick={() => nav("/children/new")}>
       <Plus size={18} /> {t("Add a child")}
@@ -30,12 +32,20 @@ export function ChildrenPage() {
         <div className="grid">
           {children.map((c) => (
             <button key={c.id} className="card link row" style={{ gap: 14 }} onClick={() => nav(`/children/${c.id}`)}>
-              <Avatar child={c} />
+              <Avatar child={c} size="lg" />
               <div className="stack-sm">
-                <strong>{fullName(c)}</strong>
+                <strong style={{ fontSize: "1.1rem" }}>{fullName(c)}</strong>
                 <span className="small muted">
                   {age(c.birthDate) != null && `${age(c.birthDate)} ${t("years old")}`}
                   {c.school && ` · ${c.school}`}
+                </span>
+                <span className="row" style={{ gap: 6 }}>
+                  <span className="badge ok">
+                    {data.goals.filter((g) => g.childId === c.id && g.status === "active").length} {t("goals")}
+                  </span>
+                  <span className="badge warn">
+                    {data.behaviors.filter((b) => b.childId === c.id && b.at.slice(0, 10) > weekAgo).length} {t("behaviors this week")}
+                  </span>
                 </span>
               </div>
             </button>

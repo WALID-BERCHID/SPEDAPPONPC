@@ -57,5 +57,15 @@ export function loadDemo() {
     ["Ask for the draft plan and reports a few days before", true], ["Print the progress report from this app", true], ["Write down Sam's strengths", true],
     ["List my top 3 concerns", false], ["Ask about speech therapy minutes", false], ["Bring the All About Me page", false],
   ].map(([text, done]) => ({ id: uid(), text: text as string, done: done as boolean })) });
+  upsert("stories", { childId: sam.id, title: "Going to the dentist", pages: [["🦷", "Sometimes I go to the dentist."], ["🧸", "I sit in the waiting room. I can play with my train while I wait."], ["🪑", "I sit in a big chair. It can move up and down."], ["🔟", "I open my mouth and count to 10."], ["⭐", "When it is finished, I get a sticker!"]].map(([emoji, text]) => ({ id: uid(), emoji, text })) });
+  upsert("boards", { childId: sam.id, title: "Core words", buttons: [["🙋", "I", "#ffe066"], ["🤲", "want", "#b7e4a7"], ["➕", "more", "#a5d8ff"], ["✋", "stop", "#ffb3b3"], ["🆘", "help", "#ffc9de"], ["👍", "yes", "#ffc9de"], ["👎", "no", "#ffc9de"], ["🍽️", "eat", "#b7e4a7"], ["🥤", "drink", "#b7e4a7"], ["🚽", "toilet", "#ffd8a8"], ["🧸", "play", "#b7e4a7"], ["✅", "all done", "#ffb3b3"], ["🛋️", "break", "#b7e4a7"], ["🚂", "train", "#ffd8a8"], ["😊", "happy", "#a5d8ff"], ["😢", "sad", "#a5d8ff"], ["👩", "Mom", "#ffe066"], ["🌳", "outside", "#ffd8a8"]].map(([emoji, label, color]) => ({ id: uid(), emoji, label, color })) });
+  upsert("rewardCharts", { childId: sam.id, title: "Calm hands at school", goal: 5, earned: 3, token: "🚂", reward: "Train museum trip", rewardEmoji: "🚂", completedCount: 2 });
+  const at = (days: number, hour: number) => { const d = new Date(); d.setDate(d.getDate() + days); d.setHours(hour, 0, 0, 0); return d.toISOString(); };
+  upsert("health", { childId: sam.id, type: "appointment", at: at(3, 15), title: "Speech therapy — Dr. Patel", details: "Bring the picture board", minutes: 45 });
+  upsert("health", { childId: sam.id, type: "appointment", at: at(9, 10), title: "Paediatrician check-up", details: "", minutes: 30 });
+  upsert("health", { childId: sam.id, type: "medication", at: at(0, 20), title: "Melatonin 1 mg", details: "", minutes: null });
+  upsert("health", { childId: sam.id, type: "sleep", at: at(-1, 7), title: "Woke up twice", details: "Back to sleep with white noise", minutes: 480 });
+  upsert("health", { childId: sam.id, type: "illness", at: at(-6, 9), title: "Mild cold", details: "Stayed home", minutes: null });
+  upsert("feelings", { childId: sam.id, at: at(0, 9), feeling: "happy" });
   localStorage.setItem("hih.child", sam.id);
 }
